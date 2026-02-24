@@ -1,0 +1,251 @@
+/* Onboarding 设计稿样式 - 光盐旅记 (Figma node 143:377) */
+
+/* 设计变量 */
+:root {
+  --onboarding-brand: #030424;
+  --onboarding-text1: #030424;
+  --onboarding-text2: #5B5C70;
+  --onboarding-text3: #8D8E9C;
+  --onboarding-border: #e5e7eb;
+}
+
+/* 第一步：怎么称呼你？ */
+.onboarding-step1 {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  padding: 24px;
+  padding-top: max(24px, env(safe-area-inset-top));
+  padding-bottom: max(32px, env(safe-area-inset-bottom));
+  background: #ffffff;
+}
+
+.onboarding-step1__progress {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 32px;
+}
+
+.onboarding-step1__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 4px;
+  background: #e5e5e5;
+  transition: background 0.2s;
+}
+
+.onboarding-step1__dot--active {
+  background: var(--onboarding-brand);
+}
+
+.onboarding-step1__title {
+  font-family: "PingFang SC", -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 24px;
+  font-weight: 500;
+  line-height: 1.35;
+  color: var(--onboarding-text1);
+  margin-bottom: 24px;
+}
+
+.onboarding-step1__input {
+  width: 100%;
+  max-width: 343px;
+  padding: 16px 20px;
+  font-family: "PingFang SC", -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 16px;
+  line-height: 1.69;
+  color: var(--onboarding-text1);
+  background: #ffffff;
+  border: 1px solid var(--onboarding-border);
+  border-radius: 12px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.onboarding-step1__input::placeholder {
+  color: var(--onboarding-text3);
+}
+
+.onboarding-step1__input:focus {
+  border-color: var(--onboarding-brand);
+}
+
+.onboarding-step1__footer {
+  margin-top: auto;
+  padding-top: 48px;
+}
+
+.onboarding-step1__btn {
+  width: 100%;
+  max-width: 343px;
+  height: 52px;
+  padding: 0 24px;
+  font-family: "PingFang SC", -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 16px;
+  font-weight: 500;
+  color: #ffffff;
+  background: var(--onboarding-brand);
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.onboarding-step1__btn:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.onboarding-step1__btn:active:not(:disabled) {
+  opacity: 0.85;
+}
+
+.onboarding-step1__btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.onboarding-step1__hint {
+  margin-top: 12px;
+  font-family: "PingFang SC", -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 14px;
+  line-height: 1.64;
+  color: var(--onboarding-text3);
+}
+
+/* 第二步：有什么日常问题会影响你? (多选) - Figma node 143:318 */
+.onboarding-step2 {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  padding: 24px;
+  padding-top: max(24px, env(safe-area-inset-top));
+  padding-bottom: max(32px, env(safe-area-inset-bottom));
+  background: #ffffff;
+}
+
+.onboarding-step2__header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 32px;
+}
+
+.onboarding-step2__back {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  margin-right: 12px;
+  color: var(--onboarding-text1);
+  text-decoration: none;
+}
+
+.onboarding-step2__progress {
+  display: flex;
+  gap: 8px;
+}
+
+.onboarding-step2__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 4px;
+  background: #e5e5e5;
+  transition: background 0.2s;
+}
+
+.onboarding-step2__dot--active {
+  background: var(--onboarding-brand);
+}
+
+.onboarding-step2__title {
+  font-family: "PingFang SC", -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 24px;
+  font-weight: 500;
+  line-height: 1.35;
+  color: var(--onboarding-text1);
+  margin-bottom: 24px;
+}
+
+.onboarding-step2__subtitle {
+  font-family: "PingFang SC", -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 20px;
+  font-weight: 400;
+  line-height: 1.5;
+  color: var(--onboarding-text2);
+  margin-bottom: 24px;
+}
+
+.onboarding-step2__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  flex: 1;
+}
+
+.onboarding-step2__option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 16px;
+  font-family: "PingFang SC", -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 16px;
+  font-weight: 400;
+  color: var(--onboarding-text1);
+  background: #F1F1F1;
+  border: 2px solid transparent;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.onboarding-step2__option:hover {
+  background: #e8e8e8;
+}
+
+.onboarding-step2__option--selected {
+  background: #ffffff;
+  border-color: var(--onboarding-brand);
+}
+
+.onboarding-step2__emoji {
+  font-size: 20px;
+}
+
+.onboarding-step2__footer {
+  margin-top: auto;
+  padding-top: 48px;
+}
+
+.onboarding-step2__btn {
+  width: 100%;
+  max-width: 343px;
+  height: 52px;
+  padding: 0 24px;
+  font-family: "PingFang SC", -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 16px;
+  font-weight: 500;
+  color: #ffffff;
+  background: var(--onboarding-brand);
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.onboarding-step2__btn:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.onboarding-step2__btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.onboarding-step2__hint {
+  margin-top: 12px;
+  font-family: "PingFang SC", -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 14px;
+  color: var(--onboarding-text3);
+}

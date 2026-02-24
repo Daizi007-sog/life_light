@@ -1,0 +1,109 @@
+/* 布局、移动端适配 */
+.app-header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: var(--color-surface);
+    padding: var(--space-md) var(--space-lg);
+    padding-top: calc(var(--space-md) + var(--safe-top));
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.logo {
+    font-size: var(--font-size-xl);
+    font-weight: 700;
+    color: var(--color-primary);
+    text-align: center;
+    margin-bottom: var(--space-sm);
+}
+
+.nav-tabs {
+    display: flex;
+    gap: var(--space-md);
+    justify-content: center;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: var(--space-xs);
+}
+
+.nav-tabs a {
+    flex-shrink: 0;
+    padding: var(--space-sm) var(--space-md);
+    min-height: var(--touch-min);
+    display: flex;
+    align-items: center;
+    color: var(--color-text-muted);
+    font-size: var(--font-size-sm);
+    border-radius: var(--radius-md);
+    transition: color 0.2s, background 0.2s;
+}
+
+.nav-tabs a:hover,
+.nav-tabs a.active {
+    color: var(--color-primary);
+    background: rgba(52, 152, 219, 0.1);
+}
+
+.app-main {
+    min-height: calc(100vh - 140px);
+    padding: var(--space-lg);
+    padding-bottom: calc(var(--space-lg) + var(--safe-bottom));
+    max-width: 430px;
+    margin: 0 auto;
+}
+
+/* 页面容器 */
+.page {
+    animation: fadeIn 0.25s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+/* 卡片容器 */
+.card-grid {
+    display: grid;
+    gap: var(--space-md);
+}
+
+/* 表单布局 */
+.form-group {
+    margin-bottom: var(--space-lg);
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: var(--space-sm);
+    font-weight: 500;
+    font-size: var(--font-size-sm);
+}
+
+.form-group input,
+.form-group textarea,
+.form-group select {
+    width: 100%;
+    padding: var(--space-md);
+    min-height: var(--touch-min);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+}
+
+.form-group textarea {
+    min-height: 100px;
+    resize: vertical;
+}
+
+@media (min-width: 375px) {
+    .app-main {
+        padding: var(--space-xl);
+    }
+}
+
+@media (min-width: 414px) {
+    .app-main {
+        padding: var(--space-2xl);
+    }
+}

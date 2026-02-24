@@ -1,0 +1,20 @@
+[
+  {
+    "id": "default",
+    "name": "默认",
+    "image": "assets/placeholder-card.svg",
+    "styles": {}
+  },
+  {
+    "id": "warm",
+    "name": "温暖",
+    "image": "assets/placeholder-card.svg",
+    "styles": {}
+  },
+  {
+    "id": "minimal",
+    "name": "简约",
+    "image": "assets/placeholder-card.svg",
+    "styles": {}
+  }
+]
