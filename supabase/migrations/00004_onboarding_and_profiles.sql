@@ -29,7 +29,7 @@ CREATE TRIGGER trigger_profiles_updated_at
     BEFORE UPDATE ON public.profiles
     FOR EACH ROW EXECUTE FUNCTION public.update_updated_at();
 
--- 3. 插入七步入职配置（光盐旅记）
+-- 3. 插入七步入职配置（光盐旅迹）
 INSERT INTO public.onboarding_configs (step_order, question_text, input_type, options) VALUES
 (1, '怎么称呼你?', 'text', '[]'),
 (2, '有什么日常问题会影响你? (多选)', 'multi_select', '[
@@ -77,7 +77,7 @@ INSERT INTO public.onboarding_configs (step_order, question_text, input_type, op
   {"value": "freedom", "label": "捆绑释放", "emoji": "⛓️"},
   {"value": "passion", "label": "重拾热情", "emoji": "🔥"}
 ]'),
-(7, '光盐旅记可以在哪些方面陪伴你成长?', 'single_select', '[
+(7, '光盐旅迹可以在哪些方面陪伴你成长?', 'single_select', '[
   {"value": "prayer", "label": "每日祷告引领"},
   {"value": "scripture", "label": "深度经文启示"},
   {"value": "practical", "label": "信仰视角的现实指引"},

@@ -55,7 +55,7 @@ export default function SplashPage() {
             letterSpacing: '0.5px',
           }}
         >
-          — 光盐旅记 —
+          — 光盐旅迹 —
         </p>
       </div>
 

@@ -1,8 +1,8 @@
 import './globals.css';
 
 export const metadata = {
-  title: '光盐旅记 - 基督徒灵修助手',
-  description: '生命之光',
+  title: '光盐旅迹 - 信仰生命成长助手',
+  description: '光盐旅迹 - 信仰生命成长助手',
 };
 
 export default function RootLayout({ children }) {

@@ -146,7 +146,6 @@ export default function OnboardingPage() {
         const traits = getTraits();
 
         const payload = { user_id: user?.id, nickname, traits };
-        console.log('提交的数据:', payload);
 
         if (user) {
           let { data, error } = await supabase.from('profiles').upsert(
@@ -158,26 +157,19 @@ export default function OnboardingPage() {
             console.error('Supabase 返回的 error:', error);
             if (error.code === 'PGRST204' && error.message?.includes('user_id')) {
               const fallbackPayload = { id: user.id, nickname, traits };
-              console.log('尝试使用 id 列写入 (Supabase 默认 schema):', fallbackPayload);
               const res = await supabase.from('profiles').upsert(fallbackPayload, { onConflict: 'id' });
               if (res.error) {
                 console.error('fallback 失败:', res.error);
                 throw res.error;
               }
-              console.log('fallback 成功:', res.data);
             } else {
               throw error;
             }
-          } else {
-            console.log('Supabase 返回的 data:', data);
           }
-        } else {
-          console.warn('未登录用户，跳过写入 profiles（user 为 null）');
         }
         router.replace('/dashboard');
       } catch (err) {
-        console.error('保存画像失败:', err?.message);
-        console.error('完整错误对象:', err);
+        console.error('保存画像失败:', err?.message || err);
         router.replace('/dashboard'); // 即使保存失败也让用户进入，保证流程通顺
       }
     } else {

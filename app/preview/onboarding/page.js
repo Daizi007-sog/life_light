@@ -11,7 +11,6 @@ import { getStepContainer } from '@/app/onboarding/components/StepContainers';
 import Step1Nickname from '@/app/onboarding/components/Step1Nickname';
 import Step2Options from '@/app/onboarding/components/Step2Options';
 import { MOCK_ONBOARDING_CONFIGS } from '@/lib/onboarding-config';
-import '@/app/onboarding/onboarding.css';
 
 function OnboardingPreviewContent() {
   const { configs, setConfigs, answers, setAnswer, getTraits, getNickname } = useOnboarding();
@@ -37,8 +36,7 @@ function OnboardingPreviewContent() {
 
   const handleSubmit = () => {
     if (currentStep === totalSteps) {
-      console.log('预览模式 - 提交数据:', { nickname: getNickname(), traits: getTraits() });
-      alert('预览模式：数据已打印到控制台，不会写入数据库');
+      alert('预览模式：数据不会写入数据库');
     } else {
       setCurrentStep((s) => s + 1);
     }
