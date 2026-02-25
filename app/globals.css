@@ -16,3 +16,13 @@ html, body {
   50% { opacity: 0.85; transform: scale(1.02); }
 }
 
+@keyframes toastFadeIn {
+  from { opacity: 0; transform: translate(-50%, -50%) scale(0.95); }
+  to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+
+/* 首页输入框 placeholder */
+.home-input::placeholder {
+  color: rgba(255, 255, 255, 0.5);
+}
+

@@ -4,11 +4,11 @@ import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
 /**
- * Dashboard - 个人档案生成 loading 页
- * 加载完成后跳转至愿景页面
- * Figma: node-id=177-485
+ * AI 功能加载页
+ * 四个按钮（愿景页、商业化页）点击后进入此页，加载完成后跳转主页
+ * Figma: node-id=188-420
  */
-export default function DashboardPage() {
+export default function LoadingPage() {
   const router = useRouter();
 
   useEffect(() => {
@@ -25,10 +25,12 @@ export default function DashboardPage() {
         alignItems: 'center',
         justifyContent: 'center',
         padding: 24,
+        paddingTop: 'max(24px, env(safe-area-inset-top))',
+        paddingBottom: 'max(24px, env(safe-area-inset-bottom))',
         background: '#ffffff',
       }}
     >
-      {/* 中央插画 - 使用 illustrations/loading.png */}
+      {/* 中央插画 - Figma 黄色星星+装饰元素风格 */}
       <div style={{ marginBottom: 32, position: 'relative' }}>
         <img
           src="/illustrations/loading.png"
@@ -42,7 +44,7 @@ export default function DashboardPage() {
         />
       </div>
 
-      {/* 文案 - Figma Font 6: 20px PingFang SC */}
+      {/* 文案 - Figma Font: 20px PingFang SC, lineHeight 100 */}
       <p
         style={{
           fontFamily: '"PingFang SC", "Helvetica Neue", sans-serif',
@@ -53,7 +55,7 @@ export default function DashboardPage() {
           textAlign: 'center',
         }}
       >
-        个人档案生成中...
+        努力加载中...
       </p>
     </div>
   );

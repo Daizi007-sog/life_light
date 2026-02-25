@@ -12,6 +12,7 @@ export default function StepSingleSelect({
   onSelect,
   onConfirm,
   canSubmit,
+  submitting = false,
   onBack,
   totalSteps,
   currentStep,
@@ -45,6 +46,9 @@ export default function StepSingleSelect({
         }}
       >
         <button
+          type="button"
+          id="onboarding-back"
+          name="onboarding_back"
           onClick={(e) => {
             e.preventDefault();
             onBack();
@@ -140,10 +144,15 @@ export default function StepSingleSelect({
         {options.map((opt, index) => {
           const isSelected = selected === opt.value;
           const key = opt.value || `step-opt-${index}`;
+          const optId = `onboarding-opt-${currentStep}-${opt.value || index}`;
+          const optName = `onboarding_step_${currentStep}_${opt.value || index}`;
           return (
             <button
               key={key}
               type="button"
+              id={optId}
+              name={optName}
+              aria-pressed={isSelected}
               onClick={() => onSelect(opt.value)}
               style={{
                 display: 'flex',
@@ -174,22 +183,24 @@ export default function StepSingleSelect({
       <div style={{ marginTop: 'auto' }}>
         <button
           type="button"
+          id="onboarding-confirm-single"
+          name="onboarding_confirm"
           onClick={onConfirm}
-          disabled={!canSubmit}
+          disabled={!canSubmit || submitting}
           style={{
             width: '100%',
             height: 56,
             fontSize: 16,
             fontWeight: 600,
-            color: canSubmit ? '#ffffff' : TEXT_MUTED,
-            background: canSubmit ? BRAND : BUTTON_DISABLED,
+            color: canSubmit && !submitting ? '#ffffff' : TEXT_MUTED,
+            background: canSubmit && !submitting ? BRAND : BUTTON_DISABLED,
             border: 'none',
             borderRadius: 16,
-            cursor: canSubmit ? 'pointer' : 'not-allowed',
+            cursor: canSubmit && !submitting ? 'pointer' : 'not-allowed',
             transition: 'all 0.3s ease',
           }}
         >
-          确定
+          {submitting ? '提交中...' : '确定'}
         </button>
         <p
           style={{

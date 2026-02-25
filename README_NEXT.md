@@ -23,12 +23,19 @@
 
 ## 运行
 
+**必须使用 Next.js 开发服务器**，不要用 `npx serve` 等静态服务器，否则 `/home` 等路由会 404。
+
 ```bash
 npm install
 npm run dev
 ```
 
 访问 http://localhost:3000
+
+若出现 404，可尝试清除缓存后重启：
+```bash
+rm -rf .next && npm run dev
+```
 
 ## 流程
 

@@ -110,6 +110,8 @@ export default function Step1Nickname({
       <div style={{ flex: 1 }}>
         <input
           type="text"
+          id="onboarding-step-1-input"
+          name="onboarding_step_1_nickname"
           placeholder={placeholder}
           value={value}
           onChange={(e) => onChange(e.target.value)}
@@ -135,6 +137,8 @@ export default function Step1Nickname({
       <div style={{ marginTop: 'auto' }}>
         <button
           type="button"
+          id="onboarding-confirm-step1"
+          name="onboarding_confirm_step1"
           onClick={onConfirm}
           disabled={!canSubmit}
           style={{

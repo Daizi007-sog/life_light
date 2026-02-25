@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { supabase } from '@/lib/supabase';
+import { supabase, safeGetSession } from '@/lib/supabase';
 import { OnboardingProvider } from '@/context/OnboardingContext';
 
 export default function OnboardingLayout({ children }) {
@@ -10,15 +10,29 @@ export default function OnboardingLayout({ children }) {
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!session) {
-        router.replace('/login');
-      } else {
+    async function check() {
+      try {
+        const session = await safeGetSession();
+        if (!session) {
+          router.replace('/login');
+          return;
+        }
+        // 已完成 onboarding 的用户（有 profile）直接进首页
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('user_id')
+          .eq('user_id', session.user.id)
+          .maybeSingle();
+        if (profile) {
+          router.replace('/home');
+          return;
+        }
         setReady(true);
+      } catch {
+        router.replace('/login');
       }
-    }).catch(() => {
-      router.replace('/login');
-    });
+    }
+    check();
   }, [router]);
 
   if (!ready) {

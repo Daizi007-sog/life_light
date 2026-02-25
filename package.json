@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "backup": "bash scripts/backup-push.sh",
+    "upload-backgrounds": "node scripts/upload-backgrounds.mjs",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",

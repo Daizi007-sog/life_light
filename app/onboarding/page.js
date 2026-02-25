@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { supabase } from '@/lib/supabase';
+import { supabase, safeGetUser } from '@/lib/supabase';
 import { MOCK_ONBOARDING_CONFIGS } from '@/lib/onboarding-config';
 import { useOnboarding } from '@/context/OnboardingContext';
 import Step1Nickname from './components/Step1Nickname';
@@ -18,6 +18,7 @@ export default function OnboardingPage() {
   const { configs, setConfigs, answers, setAnswer, getTraits, getNickname } = useOnboarding();
   const [currentStep, setCurrentStep] = useState(1);
   const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
 
   // 强制将步骤 5、7 设为多选（覆盖 Supabase 可能返回的旧配置）
   function normalizeConfigs(raw) {
@@ -137,40 +138,41 @@ export default function OnboardingPage() {
     options = [];
   }
 
-  // 4. 提交/下一步逻辑
+  // 4. 提交/下一步逻辑（无 eval/new Function/setTimeout(string)，符合 CSP）
   const handleSubmit = async () => {
+    console.log('Button clicked, processing choices...');
+    if (submitting) return;
     if (isLastStep) {
+      setSubmitting(true);
       try {
-        const { data: { user } } = await supabase.auth.getUser();
+        const user = await safeGetUser();
         const nickname = getNickname();
         const traits = getTraits();
-
         const payload = { user_id: user?.id, nickname, traits };
+        console.log('[Onboarding] 开始写入 profiles, traits=', traits);
 
-        if (user) {
-          let { data, error } = await supabase.from('profiles').upsert(
-            payload,
-            { onConflict: 'user_id' }
-          );
-
-          if (error) {
-            console.error('Supabase 返回的 error:', error);
-            if (error.code === 'PGRST204' && error.message?.includes('user_id')) {
-              const fallbackPayload = { id: user.id, nickname, traits };
-              const res = await supabase.from('profiles').upsert(fallbackPayload, { onConflict: 'id' });
-              if (res.error) {
-                console.error('fallback 失败:', res.error);
-                throw res.error;
-              }
-            } else {
-              throw error;
-            }
+        if (!user) {
+          console.warn('[Onboarding] 未登录，跳转登录页');
+          router.replace('/login');
+          return;
+        }
+        const { error } = await supabase.from('profiles').upsert(payload, { onConflict: 'user_id' });
+        if (error) {
+          if (error.code === 'PGRST204' && error.message?.includes('user_id')) {
+            const fallbackPayload = { id: user.id, nickname, traits };
+            const res = await supabase.from('profiles').upsert(fallbackPayload, { onConflict: 'id' });
+            if (res.error) throw res.error;
+          } else {
+            throw error;
           }
         }
+        console.log('[Onboarding] profiles 写入成功');
         router.replace('/dashboard');
       } catch (err) {
-        console.error('保存画像失败:', err?.message || err);
-        router.replace('/dashboard'); // 即使保存失败也让用户进入，保证流程通顺
+        console.error('[Onboarding] 保存画像失败:', err?.message || err);
+        router.replace('/dashboard');
+      } finally {
+        setSubmitting(false);
       }
     } else {
       setCurrentStep((s) => s + 1);
@@ -212,6 +214,7 @@ export default function OnboardingPage() {
           onSelect={(v) => setAnswer('2', v)}
           onConfirm={handleSubmit}
           canSubmit={(answers[2] || []).length > 0}
+          submitting={submitting}
           onBack={handleBack}
           totalSteps={totalSteps}
           currentStep={currentStep}
@@ -225,6 +228,7 @@ export default function OnboardingPage() {
           onSelect={(v) => setAnswer(String(currentStep), v)}
           onConfirm={handleSubmit}
           canSubmit={(answers[currentStep] || []).length > 0}
+          submitting={submitting}
           onBack={handleBack}
           totalSteps={totalSteps}
           currentStep={currentStep}
@@ -233,7 +237,7 @@ export default function OnboardingPage() {
         /* 文本输入步骤兜底 */
         <div style={{ padding: 24, flex: 1, display: 'flex', flexDirection: 'column' }}>
           <header style={{ display: 'flex', alignItems: 'center', marginBottom: 32 }}>
-            <button onClick={handleBack} style={{ background: 'none', border: 'none', fontSize: 24, marginRight: 12, cursor: 'pointer' }}>←</button>
+            <button type="button" id="onboarding-back" onClick={handleBack} style={{ background: 'none', border: 'none', fontSize: 24, marginRight: 12, cursor: 'pointer' }}>←</button>
             <div style={{ display: 'flex', gap: 8 }}>
               {Array.from({ length: totalSteps }).map((_, i) => (
                 <span key={i} style={{ width: 8, height: 8, borderRadius: 4, background: i + 1 <= currentStep ? '#030424' : '#e5e5e5' }} />
@@ -243,6 +247,8 @@ export default function OnboardingPage() {
           <h1 style={{ fontSize: 24, fontWeight: 500, marginBottom: 8 }}>{stepTitle}</h1>
           <input
             type="text"
+            id={`onboarding-step-${currentStep}-input`}
+            name={`onboarding_step_${currentStep}`}
             value={answers[currentStep] || ''}
             onChange={(e) => setAnswer(String(currentStep), e.target.value)}
             placeholder="请输入"
@@ -250,11 +256,13 @@ export default function OnboardingPage() {
           />
           <div style={{ marginTop: 'auto', paddingTop: 24 }}>
             <button
+              type="button"
+              id="onboarding-confirm-text"
               onClick={handleSubmit}
-              disabled={!answers[currentStep]}
-              style={{ width: '100%', height: 52, background: '#030424', color: '#fff', border: 'none', borderRadius: 12, fontSize: 16, fontWeight: 500, opacity: !answers[currentStep] ? 0.3 : 1, cursor: 'pointer' }}
+              disabled={!answers[currentStep] || submitting}
+              style={{ width: '100%', height: 52, background: '#030424', color: '#fff', border: 'none', borderRadius: 12, fontSize: 16, fontWeight: 500, opacity: !answers[currentStep] || submitting ? 0.3 : 1, cursor: 'pointer' }}
             >
-              确定
+              {submitting ? '提交中...' : '确定'}
             </button>
             <p style={{ marginTop: 12, fontSize: 14, color: '#A5A29D', textAlign: 'center' }}>后续可以在设置中更改</p>
           </div>
@@ -268,6 +276,7 @@ export default function OnboardingPage() {
           onSelect={(v) => setAnswer(String(currentStep), v)}
           onConfirm={handleSubmit}
           canSubmit={!!answers[currentStep]}
+          submitting={submitting}
           onBack={handleBack}
           totalSteps={totalSteps}
           currentStep={currentStep}

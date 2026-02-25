@@ -13,8 +13,9 @@
 ### 1. 配置 Supabase
 
 1. 在 [Supabase](https://supabase.com) 创建项目
-2. 在 SQL Editor 中依次执行 `supabase/migrations/` 下的 SQL 文件
-3. 在 Storage 中创建 bucket：`card-images`、`interpretation-images`（可选）
+2. **关闭邮箱确认**：Authentication → Providers → Email → Confirm email 设为 **OFF**（否则注册会报 422，详见 [docs/SUPABASE_AUTH_SETUP.md](docs/SUPABASE_AUTH_SETUP.md)）
+3. 在 SQL Editor 中依次执行 `supabase/migrations/` 下的 SQL 文件
+3. 在 Storage 中创建 bucket：`card-images`、`interpretation-images`（可选）、`life_main_backgrounds`（首页背景图，需设为 Public）
 4. 在 Edge Functions 中部署三个函数，并配置环境变量：
    - `OPENAI_API_KEY` 或 `DASHSCOPE_API_KEY`（LLM API）
    - `CRON_SECRET`（仅 daily-encouragement，用于定时任务鉴权）
@@ -62,6 +63,16 @@ life_light/
 ├── nginx/         # Nginx 配置
 └── docs/          # 文档
 ```
+
+## 首页背景图
+
+首页每日随机展示一张背景图，图片来自 Supabase Storage 的 `life_main_backgrounds` bucket。
+
+1. 将图片放入 `assets/backgrounds/`（支持 jpg、png、webp）
+2. 配置 `.env.local` 中的 `SUPABASE_SERVICE_ROLE_KEY`
+3. 执行 `npm run upload-backgrounds` 上传
+
+详见 [assets/backgrounds/README.md](assets/backgrounds/README.md)
 
 ## 定时任务
 

@@ -18,6 +18,7 @@ export default function RegisterPage() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [toast, setToast] = useState('');
 
   // Figma 变量
   const BRAND = '#030424';
@@ -43,20 +44,42 @@ export default function RegisterPage() {
     }
 
     setLoading(true);
+    setToast('注册中，请稍后');
     try {
       const email = usernameToEmail(username);
       const { data, error: err } = await supabase.auth.signUp({
         email,
         password,
-        options: { emailRedirectTo: undefined },
+        options: {
+          data: { username },
+          emailRedirectTo: undefined,
+        },
       });
-      if (err) throw err;
+      if (err) {
+        const code = err?.code || '';
+        const msg = err?.message || '';
+        if (err?.status === 422 || code === 'email_address_not_authorized' || msg.includes('email')) {
+          setError('注册失败：请在 Supabase 控制台关闭「邮箱确认」功能。路径：Authentication → Providers → Email → Confirm email 设为 OFF');
+        } else if (msg.includes('rate limit') || code === 'over_request_rate_limit') {
+          setError('请求频繁，请稍后再试');
+        } else if (code === 'user_already_exists' || msg.includes('already')) {
+          setError('该用户名已被注册，请换一个');
+        } else {
+          setError(msg || '注册失败');
+        }
+        return;
+      }
+      if (!data?.user) {
+        setError('注册失败，请重试');
+        return;
+      }
       router.replace('/onboarding');
     } catch (err) {
-      const msg = err.message || '';
+      const msg = err?.message || '';
       setError(msg.includes('rate limit') ? '请求频繁，请稍后再试' : (msg || '注册失败'));
     } finally {
       setLoading(false);
+      setToast('');
     }
   };
 
@@ -64,6 +87,7 @@ export default function RegisterPage() {
     <div
       style={{
         minHeight: '100dvh',
+        position: 'relative',
         display: 'flex',
         flexDirection: 'column',
         padding: '0 24px',
@@ -260,6 +284,28 @@ export default function RegisterPage() {
           {loading ? '提交中...' : '确定'}
         </button>
       </form>
+
+      {/* Toast */}
+      {toast && (
+        <div
+          style={{
+            position: 'fixed',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            padding: '14px 24px',
+            background: 'rgba(0,0,0,0.75)',
+            color: '#ffffff',
+            fontSize: 15,
+            borderRadius: 12,
+            zIndex: 9999,
+            boxShadow: '0 4px 20px rgba(0,0,0,0.2)',
+            animation: 'toastFadeIn 0.2s ease',
+          }}
+        >
+          {toast}
+        </div>
+      )}
 
       {/* 底部跳转 */}
       <div style={{ marginTop: 'auto', textAlign: 'center' }}>

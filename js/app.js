@@ -1,8 +1,9 @@
 /**
  * 应用入口、路由、初始化
+ * 超时保护：getSession 3 秒无响应则进入游客模式；本地存储损坏时自动清除并重载
  */
 import { initSupabase } from './supabase-client.js';
-import { getCurrentUser, onAuthStateChange } from './auth.js';
+import { getCurrentUser, safeGetCurrentUser, onAuthStateChange } from './auth.js';
 import { renderLoginPage } from './pages/login.js';
 import { renderHomePage } from './pages/home.js';
 import { renderProfilePage } from './pages/profile.js';
@@ -19,13 +20,34 @@ const routes = {
     '/interpretation': renderInterpretationPage,
 };
 
+const INIT_FALLBACK_MS = 4000;
+
 let currentUser = null;
+let initDone = false;
 
 async function init() {
     await initSupabase();
-    currentUser = await getCurrentUser();
-    renderNav();
-    handleRoute();
+    const fallback = setTimeout(() => {
+        if (!initDone) {
+            initDone = true;
+            currentUser = null;
+            console.warn('初始化超时，进入游客模式');
+            renderNav();
+            handleRoute();
+        }
+    }, INIT_FALLBACK_MS);
+    try {
+        currentUser = await safeGetCurrentUser();
+    } catch {
+        currentUser = null;
+    } finally {
+        if (!initDone) {
+            initDone = true;
+            clearTimeout(fallback);
+            renderNav();
+            handleRoute();
+        }
+    }
     onAuthStateChange?.((event) => {
         if (event === 'SIGNED_IN' || event === 'SIGNED_OUT') {
             getCurrentUser().then((u) => {

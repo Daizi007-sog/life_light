@@ -39,7 +39,13 @@ export default function LoginPage() {
       const email = usernameToEmail(username);
       const { data, error: err } = await supabase.auth.signInWithPassword({ email, password });
       if (err) throw err;
-      router.replace('/onboarding');
+      // 已完成 onboarding 的用户（有 profile）直接进首页，否则进入引导流程
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('user_id')
+        .eq('user_id', data.user.id)
+        .maybeSingle();
+      router.replace(profile ? '/home' : '/onboarding');
     } catch (err) {
       const msg = err.message || '';
       setError(msg.includes('Invalid login credentials') ? '用户名或密码错误' : (msg || '登录失败'));

@@ -12,6 +12,7 @@ export default function Step2Options({
   onSelect,
   onConfirm,
   canSubmit,
+  submitting = false,
   onBack,
   totalSteps,
   currentStep,
@@ -28,6 +29,11 @@ export default function Step2Options({
       ? selected.filter((v) => v !== opt.value)
       : [...selected, opt.value];
     onSelect(next);
+  };
+
+  const handleConfirmClick = () => {
+    if (submitting || !canSubmit) return;
+    onConfirm();
   };
 
   return (
@@ -52,6 +58,9 @@ export default function Step2Options({
         }}
       >
         <button
+          type="button"
+          id="onboarding-back"
+          name="onboarding_back"
           onClick={(e) => {
             e.preventDefault();
             onBack();
@@ -149,11 +158,16 @@ export default function Step2Options({
         {options.map((opt, index) => {
           const isSelected = selected.includes(opt.value);
           const key = opt.value || `step2-opt-${index}`;
+          const optId = `onboarding-opt-${currentStep}-${opt.value || index}`;
+          const optName = `onboarding_step_${currentStep}_${opt.value || index}`;
           const useVertical = options.length <= 5;
           return (
             <button
               key={key}
               type="button"
+              id={optId}
+              name={optName}
+              aria-pressed={isSelected}
               onClick={() => handleOptionClick(opt)}
               style={{
                 display: 'flex',
@@ -193,25 +207,27 @@ export default function Step2Options({
       <div style={{ marginTop: 'auto' }}>
         <button
           type="button"
-          onClick={onConfirm}
-          disabled={!canSubmit}
+          id="onboarding-confirm-multi"
+          name="onboarding_confirm"
+          onClick={handleConfirmClick}
+          disabled={!canSubmit || submitting}
           style={{
             width: '100%',
             height: 56,
             fontSize: 16,
             fontWeight: 600,
-            color: canSubmit ? '#ffffff' : TEXT_MUTED,
-            background: canSubmit ? BRAND : BUTTON_DISABLED,
+            color: canSubmit && !submitting ? '#ffffff' : TEXT_MUTED,
+            background: canSubmit && !submitting ? BRAND : BUTTON_DISABLED,
             border: 'none',
             borderRadius: 16,
-            cursor: canSubmit ? 'pointer' : 'not-allowed',
+            cursor: canSubmit && !submitting ? 'pointer' : 'not-allowed',
             transition: 'all 0.3s ease',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
           }}
         >
-          确定
+          {submitting ? '提交中...' : '确定'}
         </button>
         <p
           style={{

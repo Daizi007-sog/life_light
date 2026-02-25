@@ -5,10 +5,11 @@ import { useRouter } from 'next/navigation';
 /**
  * 愿景页面 - 价值观与愿景 (长滚动版)
  * 严格对齐 Figma 设计稿 (node-id=180-453)
+ * 来源区分：from=home 返回首页，from=onboarding 返回首页（Onboarding 流程完成后）
  */
 export default function VisionPage() {
   const router = useRouter();
-  const BRAND = '#030424'; 
+  const BRAND = '#030424';
 
   return (
     <div
