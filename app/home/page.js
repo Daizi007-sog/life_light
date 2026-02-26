@@ -6,15 +6,55 @@ import { supabase, safeGetUser } from '@/lib/supabase';
 import { useDailyBackgroundRefresh } from '@/lib/DailyBackgroundContext';
 import { PROMO_ROUTES } from '@/lib/promo-routes';
 
-const CACHE_KEY_PREFIX = 'life_main_text';
+const CACHE_KEY_PREFIX = 'dify_encouragement';
 const SEGMENTS_PER_DAY = 4;
-const FETCH_MAIN_TEXT_TIMEOUT_MS = 8000;
+const FETCH_TIMEOUT_MS = 60000;
 
 function getCurrentSegmentKey() {
   const now = new Date();
   const date = now.toISOString().slice(0, 10);
   const segment = Math.floor(now.getHours() / (24 / SEGMENTS_PER_DAY));
   return `${date}-${segment}`;
+}
+
+const SUPABASE_URL = (typeof process !== 'undefined' ? process.env.NEXT_PUBLIC_SUPABASE_URL || '' : '').trim();
+const DIFY_ENCOURAGEMENT_URL = SUPABASE_URL
+  ? `${SUPABASE_URL.replace(/\/$/, '')}/functions/v1/dify-encouragement`
+  : '';
+
+/**
+ * 调用 dify-encouragement Edge Function 获取鼓励话语
+ * 传入 access_token 时，Edge Function 可读取用户画像生成个性化鼓励文字
+ */
+async function fetchDifyEncouragement(accessToken) {
+  if (!DIFY_ENCOURAGEMENT_URL) {
+    return { ok: false, status: 0, text: 'NEXT_PUBLIC_SUPABASE_URL 未配置', data: null };
+  }
+  const headers = { 'Content-Type': 'application/json' };
+  if (accessToken) {
+    headers['Authorization'] = `Bearer ${accessToken}`;
+  }
+  const res = await fetch(DIFY_ENCOURAGEMENT_URL, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({}),
+  });
+  const text = await res.text();
+  if (res.status !== 200) {
+    if (typeof window !== 'undefined') {
+      console.error('[dify-encouragement] 非 200 响应:', res.status, text);
+    }
+    return { ok: false, status: res.status, text, data: null };
+  }
+  try {
+    const data = JSON.parse(text);
+    return { ok: true, status: res.status, text, data };
+  } catch {
+    if (typeof window !== 'undefined') {
+      console.error('[dify-encouragement] JSON 解析失败:', text?.slice(0, 500));
+    }
+    return { ok: false, status: res.status, text, data: null };
+  }
 }
 
 export default function HomePage() {
@@ -25,59 +65,113 @@ export default function HomePage() {
   const [mainContent, setMainContent] = useState('');
   const [aiStatus, setAiStatus] = useState('loading');
 
-  const fetchMainText = useCallback(async () => {
+  const fetchEncouragement = useCallback(async (options = {}) => {
+    const { forceRefresh = false } = options;
+    const log = (msg, data) => {
+      if (typeof window !== 'undefined') {
+        console.log('[dify-encouragement]', msg, data !== undefined ? data : '');
+      }
+    };
+    const logErr = (msg, err) => {
+      if (typeof window !== 'undefined') {
+        console.error('[dify-encouragement]', msg, err?.message || err, err);
+      }
+    };
+
+    setAiStatus('loading');
+    const segmentKey = getCurrentSegmentKey();
+    const cacheKey = `${CACHE_KEY_PREFIX}_anon`;
+
     try {
       const user = await safeGetUser();
-      if (!user) {
-        setAiStatus('failed');
-        setMainContent('');
-        if (typeof window !== 'undefined') {
-          console.warn('[life-main-text] 未登录，跳过 AI 请求');
-        }
-        return;
-      }
-      setAiStatus('loading');
-      const segmentKey = getCurrentSegmentKey();
-      const cacheKey = `${CACHE_KEY_PREFIX}_${user.id}`;
-      try {
-        const raw = typeof localStorage !== 'undefined' ? localStorage.getItem(cacheKey) : null;
-        if (raw) {
-          const parsed = JSON.parse(raw);
-          if (parsed?.segment === segmentKey && parsed?.content) {
-            setMainContent(parsed.content);
-            setAiStatus('connected');
-            return;
+      if (user && !forceRefresh) {
+        const userCacheKey = `${CACHE_KEY_PREFIX}_${user.id}`;
+        try {
+          const raw = typeof localStorage !== 'undefined' ? localStorage.getItem(userCacheKey) : null;
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            if (parsed?.segment === segmentKey && parsed?.content) {
+              setMainContent(parsed.content);
+              setAiStatus('connected');
+              log('命中缓存', { segment: segmentKey });
+              return;
+            }
           }
+        } catch {
+          // 缓存解析失败，忽略
         }
-      } catch {}
-      const invokePromise = supabase.functions.invoke('life-main-text', { body: {} });
+      }
+
+      log('开始请求，超时 ' + FETCH_TIMEOUT_MS + 'ms');
       const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('请求超时')), FETCH_MAIN_TEXT_TIMEOUT_MS)
+        setTimeout(() => reject(new Error('请求超时')), FETCH_TIMEOUT_MS)
       );
-      const { data, error } = await Promise.race([invokePromise, timeoutPromise]);
-      if (error) throw error;
-      const content = data?.content?.trim();
+
+      let accessToken = null;
+      if (user) {
+        const { data: { session } } = await supabase.auth.getSession();
+        accessToken = session?.access_token ?? null;
+      }
+
+      let result;
+      try {
+        result = await Promise.race([fetchDifyEncouragement(accessToken), timeoutPromise]);
+      } catch (err) {
+        const isTimeout = err?.message === '请求超时';
+        if (isTimeout) {
+          setAiStatus('timeout');
+          setMainContent(''); // 超时清空，由 displayContent 回退到默认文案
+          if (typeof window !== 'undefined') {
+            console.error('[dify-encouragement] error.message:', err?.message);
+          }
+          return;
+        }
+        if (typeof window !== 'undefined') {
+          console.error('[dify-encouragement] 捕获异常:', err?.message, err);
+        }
+        throw err;
+      }
+
+      if (!result.ok || !result.data || typeof result.data !== 'object') {
+        logErr('响应错误', result);
+        if (typeof window !== 'undefined' && result?.text) {
+          console.error('[dify-encouragement] response.text():', result.text);
+        }
+        throw new Error(result?.data?.error || result?.text || '无返回内容');
+      }
+      const res = result.data;
+      const content = res?.content != null ? String(res.content).trim() : '';
+
       if (content) {
         setMainContent(content);
         setAiStatus('connected');
+        const key = user ? `${CACHE_KEY_PREFIX}_${user.id}` : cacheKey;
         if (typeof localStorage !== 'undefined') {
-          localStorage.setItem(cacheKey, JSON.stringify({ content, segment: segmentKey }));
+          localStorage.setItem(key, JSON.stringify({ content, segment: segmentKey }));
+        }
+        if (typeof window !== 'undefined') {
+          console.log('✅ 成功透传 Dify 文本并更新 UI:', content.slice(0, 80) + (content.length > 80 ? '...' : ''));
         }
       } else {
+        if (typeof window !== 'undefined') {
+          console.error('❌ 收到响应但 content 为空:', res);
+        }
         throw new Error('无返回内容');
       }
     } catch (err) {
       setAiStatus('failed');
       setMainContent('');
+      logErr('失败', err);
       if (typeof window !== 'undefined') {
-        console.error('[life-main-text] 失败:', err?.message || err, err);
+        console.log('[dify-encouragement] error.message:', err?.message);
+        console.log('[dify-encouragement] 已退出加载，显示默认文案');
       }
     }
   }, []);
 
   useEffect(() => {
-    fetchMainText();
-  }, [fetchMainText]);
+    fetchEncouragement();
+  }, [fetchEncouragement]);
 
   useEffect(() => {
     async function fetchNickname() {
@@ -105,17 +199,16 @@ export default function HomePage() {
   };
 
   const AI_CONTENT_PLACEHOLDER = `在寻求内心平安的旷野中，你并不孤单。基督曾说:"我留下平安给你们，我将我的平安赐给你们。"这平安不像世人所求的虚幻安稳,而是穿越风暴仍屹立不灭的应许。让祂的平安在你心里作主,照亮前路。`;
-  const displayContent = mainContent || AI_CONTENT_PLACEHOLDER;
+  const displayContent =
+    aiStatus === 'loading' ? '正在加载...' : mainContent || AI_CONTENT_PLACEHOLDER;
 
   const handleRefreshBg = () => {
+    setMainContent('');
+    setAiStatus('loading');
     refreshBg();
-    if (aiStatus === 'failed') {
-      fetchMainText();
-      setToast('正在重试 AI...');
-    } else {
-      setToast('已更新');
-    }
-    setTimeout(() => setToast(''), 1200);
+    fetchEncouragement({ forceRefresh: true });
+    setToast('正在刷新背景与鼓励话语...');
+    setTimeout(() => setToast(''), 2000);
   };
 
   return (
@@ -130,9 +223,10 @@ export default function HomePage() {
     >
       <div style={{ position: 'absolute', top: 'max(24px, env(safe-area-inset-top))', left: 32, zIndex: 10, display: 'flex', flexDirection: 'column', gap: 8 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: 'rgba(255,255,255,0.7)', fontFamily: '"PingFang SC", sans-serif' }}>
-          <span style={{ width: 6, height: 6, borderRadius: 3, background: aiStatus === 'connected' ? '#34C759' : aiStatus === 'failed' ? '#FF3B30' : '#FFCC00' }} />
-          {aiStatus === 'loading' && '检测中...'}
-          {aiStatus === 'connected' && 'DeepSeek 已连接'}
+          <span style={{ width: 6, height: 6, borderRadius: 3, background: aiStatus === 'connected' ? '#34C759' : aiStatus === 'failed' ? '#FF3B30' : aiStatus === 'timeout' ? '#FFCC00' : '#FFCC00' }} />
+          {aiStatus === 'loading' && 'AI 生成中，请稍候...'}
+          {aiStatus === 'timeout' && '请求超时，点击更新重试'}
+          {aiStatus === 'connected' && 'Dify 已连接'}
           {aiStatus === 'failed' && 'AI 未连接'}
         </div>
         <button type="button" onClick={handleRefreshBg} style={{ padding: '6px 12px', fontSize: 12, color: 'rgba(255,255,255,0.7)', background: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(4px)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 8, cursor: 'pointer', fontFamily: '"PingFang SC", sans-serif' }}>
@@ -185,7 +279,7 @@ export default function HomePage() {
         </div>
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, background: 'rgba(255,255,255,0.08)', backdropFilter: 'blur(10px)', borderRadius: 28, padding: '8px 8px 8px 24px', border: '1px solid rgba(255,255,255,0.12)', marginBottom: 'env(safe-area-inset-bottom)' }}>
-        <input type="text" placeholder="说点什么吧..." disabled style={{ flex: 1, background: 'transparent', border: 'none', outline: 'none', color: '#ffffff', fontSize: 16, fontFamily: '"PingFang SC", sans-serif' }} />
+        <input id="home-say-input" name="say_something" type="text" placeholder="说点什么吧..." disabled style={{ flex: 1, background: 'transparent', border: 'none', outline: 'none', color: '#ffffff', fontSize: 16, fontFamily: '"PingFang SC", sans-serif' }} />
         <button type="button" style={{ width: 40, height: 40, borderRadius: '50%', background: 'rgba(255,255,255,0.2)', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }} aria-label="发送">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <line x1="22" y1="2" x2="11" y2="13" />

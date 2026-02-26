@@ -43,6 +43,11 @@ export default function RegisterPage() {
       return;
     }
 
+    if (password.length < 6) {
+      setError('密码至少 6 位');
+      return;
+    }
+
     setLoading(true);
     setToast('注册中，请稍后');
     try {
@@ -58,8 +63,12 @@ export default function RegisterPage() {
       if (err) {
         const code = err?.code || '';
         const msg = err?.message || '';
-        if (err?.status === 422 || code === 'email_address_not_authorized' || msg.includes('email')) {
-          setError('注册失败：请在 Supabase 控制台关闭「邮箱确认」功能。路径：Authentication → Providers → Email → Confirm email 设为 OFF');
+        const status = err?.status;
+        if (status === 422 || code === 'email_address_not_authorized' || msg.includes('email')) {
+          setError('注册失败(422)：请确认 1) Supabase 已关闭邮箱确认；2) 用户名 2-32 位不含@；3) 密码至少 6 位。详见控制台');
+          if (typeof window !== 'undefined') {
+            console.error('[register] 422 详情:', { code, msg, status, email: usernameToEmail(username) });
+          }
         } else if (msg.includes('rate limit') || code === 'over_request_rate_limit') {
           setError('请求频繁，请稍后再试');
         } else if (code === 'user_already_exists' || msg.includes('already')) {
@@ -129,17 +138,21 @@ export default function RegisterPage() {
       </h1>
 
       {/* 表单区域 */}
-      <form onSubmit={handleSubmit} style={{ flex: 1 }}>
+      <form id="register-form" name="registerForm" onSubmit={handleSubmit} style={{ flex: 1 }}>
         <div style={{ marginBottom: 24 }}>
-          <label style={{ display: 'block', fontSize: 14, color: TEXT_SECONDARY, marginBottom: 12, fontWeight: 500 }}>
+          <label htmlFor="register-username" style={{ display: 'block', fontSize: 14, color: TEXT_SECONDARY, marginBottom: 12, fontWeight: 500 }}>
             用户名
           </label>
           <input
+            id="register-username"
+            name="username"
             type="text"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
             placeholder="请设置用户名（2-32 位）"
             required
+            minLength={2}
+            maxLength={32}
             style={{
               width: '100%',
               padding: '18px 20px',
@@ -155,17 +168,20 @@ export default function RegisterPage() {
         </div>
 
         <div style={{ marginBottom: 24 }}>
-          <label style={{ display: 'block', fontSize: 14, color: TEXT_SECONDARY, marginBottom: 12, fontWeight: 500 }}>
+          <label htmlFor="register-password" style={{ display: 'block', fontSize: 14, color: TEXT_SECONDARY, marginBottom: 12, fontWeight: 500 }}>
             密码
           </label>
           <div style={{ position: 'relative' }}>
             <input
+              id="register-password"
+              name="password"
               type={showPassword ? "text" : "password"}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="请输入密码（至少 6 位）"
               required
               minLength={6}
+              autoComplete="new-password"
               style={{
                 width: '100%',
                 padding: '18px 50px 18px 20px',
@@ -206,17 +222,20 @@ export default function RegisterPage() {
         </div>
 
         <div style={{ marginBottom: 24 }}>
-          <label style={{ display: 'block', fontSize: 14, color: TEXT_SECONDARY, marginBottom: 12, fontWeight: 500 }}>
+          <label htmlFor="register-confirm-password" style={{ display: 'block', fontSize: 14, color: TEXT_SECONDARY, marginBottom: 12, fontWeight: 500 }}>
             确认密码
           </label>
           <div style={{ position: 'relative' }}>
             <input
+              id="register-confirm-password"
+              name="confirmPassword"
               type={showConfirmPassword ? "text" : "password"}
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               placeholder="请再次输入密码"
               required
               minLength={6}
+              autoComplete="new-password"
               style={{
                 width: '100%',
                 padding: '18px 50px 18px 20px',
@@ -263,6 +282,8 @@ export default function RegisterPage() {
         )}
 
         <button
+          id="register-submit"
+          name="submit"
           type="submit"
           disabled={loading || !username || password.length < 6 || password !== confirmPassword}
           style={{

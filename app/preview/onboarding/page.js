@@ -111,7 +111,7 @@ function OnboardingPreviewContent() {
       {currentStep > 1 && <button onClick={handleBack} style={{ marginBottom: 16 }}>返回</button>}
       <h1>{config.question_text}</h1>
       {isText ? (
-        <input type="text" placeholder="请输入昵称" value={answers[currentStep] || ''} onChange={(e) => setAnswer(String(currentStep), e.target.value)} style={{ marginTop: 16, padding: 8 }} />
+        <input id="preview-onboarding-input" name="preview_onboarding_nickname" type="text" placeholder="请输入昵称" value={answers[currentStep] || ''} onChange={(e) => setAnswer(String(currentStep), e.target.value)} style={{ marginTop: 16, padding: 8 }} />
       ) : (
         <div style={{ marginTop: 16, display: 'flex', flexWrap: 'wrap', gap: 8 }}>
           {options.map((opt) => {

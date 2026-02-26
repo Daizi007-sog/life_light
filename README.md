@@ -17,7 +17,7 @@
 3. 在 SQL Editor 中依次执行 `supabase/migrations/` 下的 SQL 文件
 3. 在 Storage 中创建 bucket：`card-images`、`interpretation-images`（可选）、`life_main_backgrounds`（首页背景图，需设为 Public）
 4. 在 Edge Functions 中部署三个函数，并配置环境变量：
-   - `OPENAI_API_KEY` 或 `DASHSCOPE_API_KEY`（LLM API）
+   - `DIFY_API_KEY`（Dify 工作流 API Key，在 Edge Functions Secrets 中配置）
    - `CRON_SECRET`（仅 daily-encouragement，用于定时任务鉴权）
 
 ### 2. 配置前端

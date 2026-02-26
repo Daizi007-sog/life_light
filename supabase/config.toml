@@ -23,3 +23,9 @@ file_size_limit = "50MiB"
 
 [edge_runtime]
 enabled = true
+
+[functions.dify-encouragement]
+verify_jwt = false
+
+[functions.health-check]
+verify_jwt = false

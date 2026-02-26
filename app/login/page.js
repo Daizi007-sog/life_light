@@ -99,12 +99,14 @@ export default function LoginPage() {
       </h1>
 
       {/* 表单区域 */}
-      <form onSubmit={handleSubmit} style={{ flex: 1 }}>
+      <form id="login-form" name="loginForm" onSubmit={handleSubmit} style={{ flex: 1 }}>
         <div style={{ marginBottom: 24 }}>
-          <label style={{ display: 'block', fontSize: 14, color: TEXT_SECONDARY, marginBottom: 12, fontWeight: 500 }}>
+          <label htmlFor="login-username" style={{ display: 'block', fontSize: 14, color: TEXT_SECONDARY, marginBottom: 12, fontWeight: 500 }}>
             用户名
           </label>
           <input
+            id="login-username"
+            name="username"
             type="text"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
@@ -125,16 +127,19 @@ export default function LoginPage() {
         </div>
 
         <div style={{ marginBottom: 32 }}>
-          <label style={{ display: 'block', fontSize: 14, color: TEXT_SECONDARY, marginBottom: 12, fontWeight: 500 }}>
+          <label htmlFor="login-password" style={{ display: 'block', fontSize: 14, color: TEXT_SECONDARY, marginBottom: 12, fontWeight: 500 }}>
             密码
           </label>
           <div style={{ position: 'relative' }}>
             <input
+              id="login-password"
+              name="password"
               type={showPassword ? "text" : "password"}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="请输入密码"
               required
+              autoComplete="current-password"
               style={{
                 width: '100%',
                 padding: '18px 50px 18px 20px',
@@ -181,6 +186,8 @@ export default function LoginPage() {
         )}
 
         <button
+          id="login-submit"
+          name="submit"
           type="submit"
           disabled={loading || !username || !password}
           style={{

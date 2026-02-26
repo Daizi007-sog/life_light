@@ -9,28 +9,7 @@ const nextConfig = {
       ],
     };
   },
-  async headers() {
-    return [
-      {
-        source: '/:path*',
-        headers: [
-          {
-            key: 'Content-Security-Policy',
-            value: [
-              "default-src 'self'",
-              "script-src 'self' 'unsafe-eval' 'unsafe-inline'",
-              "style-src 'self' 'unsafe-inline'",
-              "img-src 'self' data: blob: https:",
-              "object-src 'self' data:",
-              "font-src 'self' data:",
-              "connect-src 'self' https: wss:",
-              "frame-ancestors 'self'",
-            ].join('; '),
-          },
-        ],
-      },
-    ];
-  },
+  // 已移除 CSP，避免拦截第三方库（如 Supabase）内部使用的 eval
 };
 
 module.exports = nextConfig;
