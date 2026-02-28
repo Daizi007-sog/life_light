@@ -109,7 +109,7 @@ export default function MainLayout({ children }) {
         />
       )}
       <DailyBackgroundContext.Provider value={{ refresh }}>
-        <div style={{ position: 'relative', zIndex: 1, flex: 1, display: 'flex', flexDirection: 'column' }}>
+        <div style={{ position: 'relative', zIndex: 1000, flex: 1, display: 'flex', flexDirection: 'column' }}>
           {children}
         </div>
       </DailyBackgroundContext.Provider>
@@ -125,7 +125,7 @@ export default function MainLayout({ children }) {
           alignItems: 'center',
           justifyContent: 'space-around',
           paddingBottom: 'env(safe-area-inset-bottom)',
-          zIndex: 100,
+          zIndex: 1100,
           boxShadow: '0 -2px 10px rgba(0,0,0,0.05)',
         }}
       >
