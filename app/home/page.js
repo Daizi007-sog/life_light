@@ -6,6 +6,12 @@ import { supabase, safeGetUser } from '@/lib/supabase';
 import { useDailyBackgroundRefresh } from '@/lib/DailyBackgroundContext';
 import { PROMO_ROUTES } from '@/lib/promo-routes';
 
+/** 印花图层：预留 Supabase Storage 链接坑位，后续替换为实际 URL */
+const FLORAL_PATTERN_URL = '/assets/placeholder-card.svg';
+
+/** 第四个模板中间层装饰图形（public/card_moban4/zhuangshi.png） */
+const TEMPLATE4_DECOR_URL = '/card_moban4/zhuangshi.png';
+
 const SUPABASE_FUNCTIONS_URL = (typeof process !== 'undefined' ? process.env.NEXT_PUBLIC_SUPABASE_URL || '' : '').trim().replace(/\/$/, '');
 const SCRIPTURE_CARD_GENERATE_URL = SUPABASE_FUNCTIONS_URL
   ? `${SUPABASE_FUNCTIONS_URL}/functions/v1/scripture-card-generate`
@@ -368,26 +374,15 @@ export default function HomePage() {
     if (view === 'chat') chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [view, messages]);
 
-  /** 切换模板：确保每次点击都随机切换到不同的视觉布局 */
+  /** 切换模板：1→2→3→4→1 循环 */
   const handleSwitchTemplate = () => {
-    setLayoutId(prev => {
-      const currentEffective = ((prev - 1) % 2) + 1;
-      let nextId;
-      let nextEffective;
-      // 循环尝试，直到找到一个视觉上不同的模板 ID
-      for (let i = 0; i < 10; i++) {
-        nextId = Math.floor(Math.random() * 4) + 1;
-        nextEffective = ((nextId - 1) % 2) + 1;
-        if (nextEffective !== currentEffective) break;
-      }
-      return nextId;
-    });
+    setLayoutId(prev => (prev % 4) + 1);
   };
 
-  /** 经文卡片结果页 - 360x620 底层卡片，支持 4 种模板随机展示 */
+  /** 经文卡片结果页 - 360x620 底层卡片，支持 4 种模板：图在上、图铺满、印花、福份 */
   const renderCardLayout = (lid, data) => {
     const { scripture_content = '', reference = '', ai_text = '', image_url } = data || {};
-    const effectiveLid = ((lid - 1) % 2) + 1;
+    const effectiveLid = ((lid - 1) % 4) + 1;
 
     // 基础容器样式
     const baseStyle = {
@@ -488,10 +483,10 @@ export default function HomePage() {
             <span style={{ fontSize: 22 }}>✨</span> 经文卡片制作完成！
           </h2>
 
-          {/* 内容区域 (红色方框部分) - 随模板切换 */}
-          <div style={{ flex: 1, background: '#ffffff', borderRadius: 20, display: 'flex', flexDirection: 'column', overflow: 'hidden', marginBottom: 35, boxShadow: '0 10px 30px rgba(0,0,0,0.03)', border: '1px solid rgba(0,0,0,0.02)', position: 'relative' }}>
+          {/* 内容区域 - 随模板切换：1 图在上 2 图铺满 3 印花 4 福份 */}
+          <div style={{ flex: 1, background: (effectiveLid === 3 || effectiveLid === 4) ? 'transparent' : '#ffffff', borderRadius: 20, display: 'flex', flexDirection: 'column', overflow: 'hidden', marginBottom: 35, boxShadow: (effectiveLid === 3 || effectiveLid === 4) ? 'none' : '0 10px 30px rgba(0,0,0,0.03)', border: (effectiveLid === 3 || effectiveLid === 4) ? 'none' : '1px solid rgba(0,0,0,0.02)', position: 'relative' }}>
             {effectiveLid === 1 ? (
-              // 模板 1 内容：图在上，文在下
+              // 模板 1：图在上，文在下
               <>
                 <div style={{ width: '100%', height: 280, background: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
                   {image_url ? <img src={image_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <div style={{ color: '#cbd5e0', fontSize: 15, fontWeight: 500 }}>图片加载中...</div>}
@@ -502,13 +497,11 @@ export default function HomePage() {
                   <p style={{ fontSize: 15, color: '#718096', textAlign: 'right', fontWeight: 500, marginTop: 'auto', paddingTop: 15 }}>{reference}</p>
                 </div>
               </>
-            ) : (
-              // 模板 2 内容：图片铺满，文字居中 (对应图一)
+            ) : effectiveLid === 2 ? (
+              // 模板 2：图片铺满，文字居中
               <>
-                {/* 背景图 */}
                 <div style={{ position: 'absolute', inset: 0, backgroundImage: image_url ? `url(${image_url})` : 'none', backgroundSize: 'cover', backgroundPosition: 'center', backgroundColor: image_url ? 'transparent' : '#94a3b8', zIndex: 0 }} />
                 {!image_url && <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ffffff', fontSize: 15, zIndex: 1 }}>图片加载中...</div>}
-                {/* 渐变遮罩 + 文字 */}
                 <div style={{ position: 'relative', zIndex: 2, flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', background: 'linear-gradient(to bottom, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0.5) 100%)', padding: '40px 25px', textAlign: 'center' }}>
                   <h3 style={{ fontSize: 20, fontWeight: 600, color: '#ffffff', marginBottom: 25, lineHeight: 1.5, textShadow: '0 2px 10px rgba(0,0,0,0.6)' }}>
                     "{ai_text || '生成遇到问题，请稍后再试。'}"
@@ -519,6 +512,31 @@ export default function HomePage() {
                   <p style={{ fontSize: 16, color: 'rgba(255,255,255,0.9)', fontWeight: 500, textShadow: '0 2px 8px rgba(0,0,0,0.6)' }}>
                     {reference}
                   </p>
+                </div>
+              </>
+            ) : effectiveLid === 3 ? (
+              // 模板 3：印花图层 + 白色背景框 + 文本居中（Figma）
+              <>
+                <div style={{ position: 'absolute', inset: 0, backgroundImage: image_url ? `url(${image_url})` : `url(${FLORAL_PATTERN_URL})`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundColor: '#e8f4f8', zIndex: 0, borderRadius: 20 }} />
+                <div style={{ position: 'relative', zIndex: 1, margin: 24, padding: '28px 24px', background: '#ffffff', borderRadius: 20, boxShadow: '0 4px 16px rgba(0,0,0,0.04)', border: '1px solid rgba(147,197,253,0.4)', flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+                  <h3 style={{ fontSize: 18, fontWeight: 600, color: '#030424', textAlign: 'center', marginBottom: 20, lineHeight: 1.4 }}>"{ai_text || '生成遇到问题，请稍后再试。'}"</h3>
+                  <p style={{ fontSize: 15, lineHeight: 1.8, color: '#4a5568', textAlign: 'justify', margin: 0, flex: 1, overflow: 'auto' }}>{scripture_content}</p>
+                  <p style={{ fontSize: 15, color: '#718096', textAlign: 'right', fontWeight: 500, marginTop: 15, paddingTop: 15 }}>{reference}</p>
+                </div>
+              </>
+            ) : (
+              // 模板 4：福份 - 全屏背景 + 全屏装饰图层 + 定位文本
+              <>
+                <div style={{ position: 'absolute', inset: 0, zIndex: 0, backgroundColor: '#f8fafc', borderRadius: 20, overflow: 'hidden' }}>
+                  {image_url ? <img src={image_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#cbd5e0', fontSize: 14 }}>图片加载中...</div>}
+                </div>
+                <div style={{ position: 'absolute', inset: 0, zIndex: 1, pointerEvents: 'none' }}>
+                  <img src={TEMPLATE4_DECOR_URL} alt="装饰" style={{ width: '100%', height: '100%', objectFit: 'fill' }} />
+                </div>
+                <div style={{ position: 'absolute', zIndex: 2, top: '33%', bottom: '20%', left: '14%', right: '14%', display: 'flex', flexDirection: 'column' }}>
+                  <h3 style={{ fontSize: 18, fontWeight: 600, color: '#030424', textAlign: 'center', marginBottom: 10, lineHeight: 1.3 }}>"{ai_text || '生成遇到问题，请稍后再试。'}"</h3>
+                  <p style={{ fontSize: 14, lineHeight: 1.6, color: '#4a5568', textAlign: 'justify', margin: 0, flex: 1, overflow: 'auto' }}>{scripture_content}</p>
+                  <p style={{ fontSize: 13, color: '#718096', textAlign: 'right', fontWeight: 500, marginTop: 8 }}>{reference}</p>
                 </div>
               </>
             )}
